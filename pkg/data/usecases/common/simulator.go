@@ -1,9 +1,10 @@
 package common
 
 import (
-	"github.com/timescale/tsbs/pkg/data"
 	"reflect"
 	"time"
+
+	"github.com/timescale/tsbs/pkg/data"
 )
 
 // SimulatorConfig is an interface to create a Simulator from a time.Duration.
@@ -22,7 +23,7 @@ type BaseSimulatorConfig struct {
 	// GeneratorScale is the total number of Generators to have in the last reporting period
 	GeneratorScale uint64
 	// GeneratorConstructor is the function used to create a new Generator given an id number and start time
-	GeneratorConstructor func(i int, start time.Time) Generator
+	GeneratorConstructor func(i int, start time.Time, interval time.Duration) Generator
 }
 
 func calculateEpochs(duration time.Duration, interval time.Duration) uint64 {
@@ -33,7 +34,7 @@ func calculateEpochs(duration time.Duration, interval time.Duration) uint64 {
 func (sc *BaseSimulatorConfig) NewSimulator(interval time.Duration, limit uint64) Simulator {
 	generators := make([]Generator, sc.GeneratorScale)
 	for i := 0; i < len(generators); i++ {
-		generators[i] = sc.GeneratorConstructor(i, sc.Start)
+		generators[i] = sc.GeneratorConstructor(i, sc.Start, interval)
 	}
 
 	epochs := calculateEpochs(sc.End.Sub(sc.Start), interval)

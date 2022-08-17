@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/timescale/tsbs/cmd/tsbs_generate_queries/uses/devops"
 	"github.com/timescale/tsbs/internal/utils"
@@ -35,11 +36,11 @@ type Devops struct {
 	*devops.Core
 }
 
-func getTimeFilterPipeline(interval *utils.TimeInterval) []bson.M {
-	return []bson.M{
-		{"$unwind": "$events"},
-		{
-			"$project": bson.M{
+func getTimeFilterPipeline(interval *utils.TimeInterval) mongo.Pipeline {
+	return mongo.Pipeline{
+		{{"$unwind", "$events"}},
+		{{
+			"$project", bson.M{
 				"key_id": 1,
 				"tags":   1,
 				"events": bson.M{
@@ -65,8 +66,8 @@ func getTimeFilterPipeline(interval *utils.TimeInterval) []bson.M {
 					},
 				},
 			},
-		},
-		{"$unwind": "$events"},
+		}},
+		{{"$unwind", "$events"}},
 	}
 }
 
@@ -108,9 +109,9 @@ func (d *Devops) GroupByTime(qi query.Query, nHosts, numMetrics int, timeRange t
 	panicIfErr(err)
 	docs := getTimeFilterDocs(interval)
 
-	pipelineQuery := []bson.M{
-		{
-			"$match": bson.M{
+	pipelineQuery := mongo.Pipeline{
+		{{
+			"$match", bson.M{
 				"measurement": "cpu",
 				"tags.hostname": bson.M{
 					"$in": hostnames,
@@ -119,42 +120,42 @@ func (d *Devops) GroupByTime(qi query.Query, nHosts, numMetrics int, timeRange t
 					"$in": docs,
 				},
 			},
-		},
-		{
-			"$project": bson.M{
+		}},
+		{{
+			"$project", bson.M{
 				"_id":    0,
 				"events": 1,
 				"key_id": 1,
 				"tags":   "$tags.hostname",
 			},
-		},
+		}},
 	}
 	pipelineQuery = append(pipelineQuery, getTimeFilterPipeline(interval)...)
-	pipelineQuery = append(pipelineQuery, bson.M{
-		"$project": bson.M{
+	pipelineQuery = append(pipelineQuery, bson.D{
+		{"$project", bson.M{
 			"time_bucket": bson.M{
 				"$dateTrunc": bson.M{"date": "$events.time", "unit": "minute"},
 			},
 			"events": 1,
-		},
+		}},
 	})
 
-	group := bson.M{
-		"$group": bson.M{
+	group := bson.D{
+		{"$group", bson.M{
 			"_id": "$time_bucket",
-		},
+		}},
 	}
-	resultMap := group["$group"].(bson.M)
+	resultMap := group[0].Value.(bson.M)
 	for _, metric := range metrics {
 		resultMap["max_"+metric] = bson.M{"$max": "$events." + metric}
 	}
 	pipelineQuery = append(pipelineQuery, group)
-	pipelineQuery = append(pipelineQuery, bson.M{"$sort": bson.M{"_id": 1}})
+	pipelineQuery = append(pipelineQuery, bson.D{{"$sort", bson.M{"_id": 1}}})
 
 	humanLabel := []byte(fmt.Sprintf("Mongo %d cpu metric(s), random %4d hosts, random %s by 1m", numMetrics, nHosts, timeRange))
 	q := qi.(*query.Mongo)
 	q.HumanLabel = humanLabel
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s: %s (%s)", humanLabel, interval.StartString(), q.CollectionName))
 }
@@ -173,9 +174,9 @@ func (d *Devops) MaxAllCPU(qi query.Query, nHosts int, duration time.Duration) {
 	docs := getTimeFilterDocs(interval)
 	metrics := devops.GetAllCPUMetrics()
 
-	pipelineQuery := []bson.M{
-		{
-			"$match": bson.M{
+	pipelineQuery := mongo.Pipeline{
+		{{
+			"$match", bson.M{
 				"measurement": "cpu",
 				"tags.hostname": bson.M{
 					"$in": hostnames,
@@ -184,42 +185,42 @@ func (d *Devops) MaxAllCPU(qi query.Query, nHosts int, duration time.Duration) {
 					"$in": docs,
 				},
 			},
-		},
-		{
-			"$project": bson.M{
+		}},
+		{{
+			"$project", bson.M{
 				"_id":    0,
 				"events": 1,
 				"key_id": 1,
 				"tags":   "$tags.hostname",
 			},
-		},
+		}},
 	}
 	pipelineQuery = append(pipelineQuery, getTimeFilterPipeline(interval)...)
-	pipelineQuery = append(pipelineQuery, bson.M{
-		"$project": bson.M{
+	pipelineQuery = append(pipelineQuery, bson.D{
+		{"$project", bson.M{
 			"time_bucket": bson.M{
 				"$dateTrunc": bson.M{"date": "$events.time", "unit": "hour"},
 			},
 			"events": 1,
-		},
+		}},
 	})
 
-	group := bson.M{
-		"$group": bson.M{
+	group := bson.D{
+		{"$group", bson.M{
 			"_id": "$time_bucket",
-		},
+		}},
 	}
-	resultMap := group["$group"].(bson.M)
+	resultMap := group[0].Value.(bson.M)
 	for _, metric := range metrics {
 		resultMap["max_"+metric] = bson.M{"$max": "$events." + metric}
 	}
 	pipelineQuery = append(pipelineQuery, group)
-	pipelineQuery = append(pipelineQuery, bson.M{"$sort": bson.M{"_id": 1}})
+	pipelineQuery = append(pipelineQuery, bson.D{{"$sort", bson.M{"_id": 1}}})
 
 	humanLabel := devops.GetMaxAllLabel("Mongo", nHosts)
 	q := qi.(*query.Mongo)
 	q.HumanLabel = []byte(humanLabel)
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s: %s", humanLabel, interval.StartString()))
 }
@@ -237,30 +238,30 @@ func (d *Devops) GroupByTimeAndPrimaryTag(qi query.Query, numMetrics int) {
 	panicIfErr(err)
 	docs := getTimeFilterDocs(interval)
 
-	pipelineQuery := []bson.M{
-		{
-			"$match": bson.M{
+	pipelineQuery := mongo.Pipeline{
+		{{
+			"$match", bson.M{
 				"measurement": "cpu",
 				"key_id": bson.M{
 					"$in": docs,
 				},
 			},
-		},
-		{
-			"$project": bson.M{
+		}},
+		{{
+			"$project", bson.M{
 				"_id":         0,
 				"events":      1,
 				"key_id":      1,
 				"measurement": 1,
 				"tags":        "$tags.hostname",
 			},
-		},
+		}},
 	}
 
 	pipelineQuery = append(pipelineQuery, getTimeFilterPipeline(interval)...)
-	pipelineQuery = append(pipelineQuery, []bson.M{
-		{
-			"$project": bson.M{
+	pipelineQuery = append(pipelineQuery, mongo.Pipeline{
+		{{
+			"$project", bson.M{
 				"time_bucket": bson.M{
 					"$dateTrunc": bson.M{"date": "$events.time", "unit": "hour"},
 				},
@@ -268,32 +269,32 @@ func (d *Devops) GroupByTimeAndPrimaryTag(qi query.Query, numMetrics int) {
 				"tags":        1,
 				"events":      1,
 			},
-		},
+		}},
 	}...)
 
 	// Add groupby operator
-	group := bson.M{
-		"$group": bson.M{
+	group := bson.D{
+		{"$group", bson.M{
 			"_id": bson.M{
 				"time":     "$time_bucket",
 				"hostname": "$tags",
 			},
-		},
+		}},
 	}
-	resultMap := group["$group"].(bson.M)
+	resultMap := group[0].Value.(bson.M)
 	for _, metric := range metrics {
 		resultMap["avg_"+metric] = bson.M{"$avg": "$events." + metric}
 	}
 	pipelineQuery = append(pipelineQuery, group)
 
 	// Add sort operators
-	sort := bson.M{"$sort": bson.D{{ "_id.time",1}, {"_id.hostname", 1}}}
+	sort := bson.D{{"$sort", bson.D{{"_id.time", 1}, {"_id.hostname", 1}}}}
 	pipelineQuery = append(pipelineQuery, sort)
 
 	humanLabel := devops.GetDoubleGroupByLabel("Mongo", numMetrics)
 	q := qi.(*query.Mongo)
 	q.HumanLabel = []byte(humanLabel)
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s: %s (%s)", humanLabel, interval.StartString(), q.CollectionName))
 }
@@ -310,71 +311,71 @@ func (d *Devops) HighCPUForHosts(qi query.Query, nHosts int) {
 	interval := d.Interval.MustRandWindow(devops.HighCPUDuration)
 	docs := getTimeFilterDocs(interval)
 
-	pipelineQuery := []bson.M{}
+	pipelineQuery := mongo.Pipeline{}
 
 	// Must match in the documents that correspond to time, as well as optionally
 	// filter on those with the correct host if nHosts > 0
-	match := bson.M{
-		"$match": bson.M{
+	match := bson.D{
+		{"$match", bson.M{
 			"measurement": "cpu",
 			"key_id": bson.M{
 				"$in": docs,
 			},
-		},
+		}},
 	}
 	if nHosts > 0 {
 		hostnames, err := d.GetRandomHosts(nHosts)
 		panicIfErr(err)
-		matchMap := match["$match"].(bson.M)
+		matchMap := match[0].Value.(bson.M)
 		matchMap["tags.hostname"] = bson.M{"$in": hostnames}
 	}
 
-	pipelineQuery = append(pipelineQuery, []bson.M{
+	pipelineQuery = append(pipelineQuery, mongo.Pipeline{
 		match,
-		bson.M{
-			"$project": bson.M{
+		bson.D{
+			{"$project", bson.M{
 				"_id":    0,
 				"events": 1,
 				"key_id": 1,
 				"tags":   "$tags.hostname",
-			},
+			}},
 		},
 	}...)
 
 	pipelineQuery = append(pipelineQuery, getTimeFilterPipeline(interval)...)
-	pipelineQuery = append(pipelineQuery, bson.M{
-		"$match": bson.M{
+	pipelineQuery = append(pipelineQuery, bson.D{
+		{"$match", bson.M{
 			"events.usage_user": bson.M{"$gt": 90.0},
-		},
+		}},
 	})
 
 	humanLabel, err := devops.GetHighCPULabel("Mongo", nHosts)
 	panicIfErr(err)
 	q := qi.(*query.Mongo)
 	q.HumanLabel = []byte(humanLabel)
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s: %s (%s)", humanLabel, interval.StartString(), q.CollectionName))
 }
 
 // LastPointPerHost finds the last row for every host in the dataset
 func (d *Devops) LastPointPerHost(qi query.Query) {
-	pipelineQuery := []bson.M{
-		{"$match": bson.M{"measurement": "cpu"}},
-		{
-			"$group": bson.M{
+	pipelineQuery := mongo.Pipeline{
+		{{"$match", bson.M{"measurement": "cpu"}}},
+		{{
+			"$group", bson.M{
 				"_id":      bson.M{"hostname": "$tags.hostname"},
 				"last_doc": bson.M{"$max": "$key_id"},
 			},
-		},
-		{
-			"$group": bson.M{
+		}},
+		{{
+			"$group", bson.M{
 				"_id":   bson.M{"doc_key": "$last_doc"},
 				"hosts": bson.M{"$addToSet": "$_id.hostname"},
 			},
-		},
-		{
-			"$lookup": bson.M{
+		}},
+		{{
+			"$lookup", bson.M{
 				"from": "point_data",
 				"let":  bson.M{"key_id": "$_id.doc_key", "hostnames": "$hosts", "measurement": "$measurement"},
 				"pipeline": []bson.M{
@@ -392,11 +393,11 @@ func (d *Devops) LastPointPerHost(qi query.Query) {
 				},
 				"as": "allDocs",
 			},
-		},
-		{"$unwind": "$allDocs"},
-		{"$unwind": "$allDocs.events"},
-		{
-			"$project": bson.M{
+		}},
+		{{"$unwind", "$allDocs"}},
+		{{"$unwind", "$allDocs.events"}},
+		{{
+			"$project", bson.M{
 				"key_id": "$allDocs.key_id",
 				"tags":   "$allDocs.tags",
 				"events": bson.M{
@@ -416,20 +417,20 @@ func (d *Devops) LastPointPerHost(qi query.Query) {
 					},
 				},
 			},
-		},
-		{"$unwind": "$events"},
-		{
-			"$group": bson.M{
+		}},
+		{{"$unwind", "$events"}},
+		{{
+			"$group", bson.M{
 				"_id":    bson.M{"hostname": "$tags.hostname"},
 				"result": bson.M{"$last": "$events"},
 			},
-		},
+		}},
 	}
 
 	humanLabel := "Mongo last row per host"
 	q := qi.(*query.Mongo)
 	q.HumanLabel = []byte(humanLabel)
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s", humanLabel))
 }
@@ -447,48 +448,48 @@ func (d *Devops) GroupByOrderByLimit(qi query.Query) {
 	}
 	docs := getTimeFilterDocs(interval)
 
-	pipelineQuery := []bson.M{
-		{
-			"$match": bson.M{
+	pipelineQuery := mongo.Pipeline{
+		{{
+			"$match", bson.M{
 				"measurement": "cpu",
 				"key_id": bson.M{
 					"$in": docs,
 				},
 			},
-		},
-		{
-			"$project": bson.M{
+		}},
+		{{
+			"$project", bson.M{
 				"_id":    0,
 				"events": 1,
 				"key_id": 1,
 				"tags":   "$tags.hostname",
 			},
-		},
+		}},
 	}
 	pipelineQuery = append(pipelineQuery, getTimeFilterPipeline(interval)...)
-	pipelineQuery = append(pipelineQuery, []bson.M{
-		{
-			"$project": bson.M{
+	pipelineQuery = append(pipelineQuery, mongo.Pipeline{
+		{{
+			"$project", bson.M{
 				"time_bucket": bson.M{
 					"$dateTrunc": bson.M{"date": "$events.time", "unit": "minute"},
 				},
 				"field": "$events.usage_user",
 			},
-		},
-		{
-			"$group": bson.M{
+		}},
+		{{
+			"$group", bson.M{
 				"_id":       "$time_bucket",
 				"max_value": bson.M{"$max": "$field"},
 			},
-		},
-		{"$sort": bson.M{"_id": -1}},
-		{"$limit": 5},
+		}},
+		{{"$sort", bson.M{"_id": -1}}},
+		{{"$limit", 5}},
 	}...)
 
 	humanLabel := "Mongo max cpu over last 5 min-intervals (random end)"
 	q := qi.(*query.Mongo)
 	q.HumanLabel = []byte(humanLabel)
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s: %s", humanLabel, interval.EndString()))
 }

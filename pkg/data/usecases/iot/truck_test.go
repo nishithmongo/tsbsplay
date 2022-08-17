@@ -1,10 +1,11 @@
 package iot
 
 import (
-	"github.com/timescale/tsbs/pkg/data"
-	"github.com/timescale/tsbs/pkg/data/usecases/common"
 	"testing"
 	"time"
+
+	"github.com/timescale/tsbs/pkg/data"
+	"github.com/timescale/tsbs/pkg/data/usecases/common"
 )
 
 func testGenerator(s time.Time) []common.SimulatedMeasurement {
@@ -43,7 +44,7 @@ func TestNewTruckMeasurements(t *testing.T) {
 
 func TestNewTruck(t *testing.T) {
 	start := time.Now()
-	generator := NewTruck(1, start)
+	generator := NewTruck(1, start, 1*time.Second)
 
 	truck := generator.(*Truck)
 

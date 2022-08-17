@@ -2,9 +2,10 @@ package common
 
 import (
 	"fmt"
-	"github.com/timescale/tsbs/pkg/data"
 	"testing"
 	"time"
+
+	"github.com/timescale/tsbs/pkg/data"
 )
 
 const testGeneratorScale = 100
@@ -59,7 +60,7 @@ func (d dummyGenerator) Tags() []Tag {
 func (d dummyGenerator) TickAll(duration time.Duration) {
 }
 
-func dummyGeneratorConstructor(i int, start time.Time) Generator {
+func dummyGeneratorConstructor(i int, start time.Time, interval time.Duration) Generator {
 	return &dummyGenerator{}
 }
 

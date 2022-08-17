@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Mongo encodes a Mongo request. This will be serialized for use
@@ -13,7 +13,7 @@ type Mongo struct {
 	HumanLabel       []byte
 	HumanDescription []byte
 	CollectionName   []byte
-	BsonDoc          []bson.M
+	Pipeline         mongo.Pipeline
 	id               uint64
 }
 
@@ -24,7 +24,7 @@ var MongoPool = sync.Pool{
 			HumanLabel:       []byte{},
 			HumanDescription: []byte{},
 			CollectionName:   []byte{},
-			BsonDoc:          []bson.M{},
+			Pipeline:         mongo.Pipeline{},
 		}
 	},
 }
@@ -65,7 +65,7 @@ func (q *Mongo) Release() {
 	q.HumanDescription = q.HumanDescription[:0]
 	q.id = 0
 	q.CollectionName = q.CollectionName[:0]
-	q.BsonDoc = nil
+	q.Pipeline = nil
 
 	MongoPool.Put(q)
 }

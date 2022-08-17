@@ -38,7 +38,8 @@ var (
 	collectionSharded    bool
 	numInitChunks        uint
 	shardKeySpec         string
-	balancerOn       bool
+	balancerOn           bool
+	metaFieldIndex       string
 )
 
 // Global vars
@@ -78,15 +79,25 @@ func init() {
 	numInitChunks = viper.GetUint("number-initial-chunks")
 	shardKeySpec = viper.GetString("shard-key-spec")
 	balancerOn = viper.GetBool("balancer-on")
+	metaFieldIndex = viper.GetString("meta-field-index")
 	if documentPer {
 		config.HashWorkers = false
 	} else {
 		config.HashWorkers = true
 	}
-	
+
 	if !documentPer && timeseriesCollection {
 		log.Fatal("Must set document-per-event=true in order to use timeseries-collection=true")
 	}
+
+	if collectionSharded && len(shardKeySpec) == 0 {
+		log.Fatal("Must specify a shard key spec in order to use a sharded collection")
+	}
+
+	if len(metaFieldIndex) == 0 {
+		log.Fatal("Must specify a field within metaField to index on")
+	}
+
 	loader = load.GetBenchmarkRunner(config)
 }
 

@@ -2,9 +2,10 @@ package iot
 
 import (
 	"fmt"
-	"github.com/timescale/tsbs/pkg/data/usecases/common"
 	"math/rand"
 	"time"
+
+	"github.com/timescale/tsbs/pkg/data/usecases/common"
 )
 
 const (
@@ -96,7 +97,7 @@ func newTruckMeasurements(start time.Time) []common.SimulatedMeasurement {
 }
 
 // NewTruck creates a new truck in a simulated iot use case
-func NewTruck(i int, start time.Time) common.Generator {
+func NewTruck(i int, start time.Time, interval time.Duration) common.Generator {
 	truck := newTruckWithMeasurementGenerator(i, start, newTruckMeasurements)
 	return &truck
 }

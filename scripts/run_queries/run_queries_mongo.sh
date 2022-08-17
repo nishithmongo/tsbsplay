@@ -46,6 +46,7 @@ function run_file()
         | $EXE_FILE_NAME \
             --max-queries $MAX_QUERIES \
             --workers $NUM_WORKERS \
+            --db-name $DATABASE_NAME \
         | tee $OUT_FULL_FILE_NAME
 }
 

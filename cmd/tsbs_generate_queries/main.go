@@ -4,13 +4,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/timescale/tsbs/pkg/query/config"
 	"os"
 	"time"
+
+	"github.com/timescale/tsbs/pkg/query/config"
 
 	"github.com/blagojts/viper"
 	"github.com/spf13/pflag"
 	"github.com/timescale/tsbs/cmd/tsbs_generate_queries/uses/devops"
+	"github.com/timescale/tsbs/cmd/tsbs_generate_queries/uses/finance"
 	"github.com/timescale/tsbs/cmd/tsbs_generate_queries/uses/iot"
 	"github.com/timescale/tsbs/cmd/tsbs_generate_queries/utils"
 	"github.com/timescale/tsbs/internal/inputs"
@@ -50,6 +52,77 @@ var useCaseMatrix = map[string]map[string]utils.QueryFillerMaker{
 		iot.LabelAvgLoad:                       iot.NewAvgLoad,
 		iot.LabelDailyActivity:                 iot.NewDailyTruckActivity,
 		iot.LabelBreakdownFrequency:            iot.NewTruckBreakdownFrequency,
+	},
+	"finance": {
+		finance.LabelLastPrice:                                finance.NewLastPrice,
+		finance.LabelMovingAverage + "-1h-15m-10":             finance.NewMovingAverage(time.Hour, 15*time.Minute, 10),
+		finance.LabelMovingAverage + "-1h-15m-20":             finance.NewMovingAverage(time.Hour, 15*time.Minute, 20),
+		finance.LabelMovingAverage + "-1h-15m-50":             finance.NewMovingAverage(time.Hour, 15*time.Minute, 50),
+		finance.LabelMovingAverage + "-1h-15m-100":            finance.NewMovingAverage(time.Hour, 15*time.Minute, 100),
+		finance.LabelMovingAverage + "-1h-15m-200":            finance.NewMovingAverage(time.Hour, 15*time.Minute, 200),
+		finance.LabelMovingAverage + "-4h-1h-10":              finance.NewMovingAverage(4*time.Hour, time.Hour, 10),
+		finance.LabelMovingAverage + "-4h-1h-20":              finance.NewMovingAverage(4*time.Hour, time.Hour, 20),
+		finance.LabelMovingAverage + "-4h-1h-50":              finance.NewMovingAverage(4*time.Hour, time.Hour, 50),
+		finance.LabelMovingAverage + "-4h-1h-100":             finance.NewMovingAverage(4*time.Hour, time.Hour, 100),
+		finance.LabelMovingAverage + "-4h-1h-200":             finance.NewMovingAverage(4*time.Hour, time.Hour, 200),
+		finance.LabelMovingAverage + "-1d-4h-10":              finance.NewMovingAverage(24*time.Hour, 4*time.Hour, 10),
+		finance.LabelMovingAverage + "-1d-4h-20":              finance.NewMovingAverage(24*time.Hour, 4*time.Hour, 20),
+		finance.LabelMovingAverage + "-1d-4h-50":              finance.NewMovingAverage(24*time.Hour, 4*time.Hour, 50),
+		finance.LabelMovingAverage + "-1d-4h-100":             finance.NewMovingAverage(24*time.Hour, 4*time.Hour, 100),
+		finance.LabelMovingAverage + "-1d-4h-200":             finance.NewMovingAverage(24*time.Hour, 4*time.Hour, 200),
+		finance.LabelMovingAverage + "-1w-1d-10":              finance.NewMovingAverage(7*24*time.Hour, 24*time.Hour, 10),
+		finance.LabelMovingAverage + "-1w-1d-20":              finance.NewMovingAverage(7*24*time.Hour, 24*time.Hour, 20),
+		finance.LabelMovingAverage + "-1w-1d-50":              finance.NewMovingAverage(7*24*time.Hour, 24*time.Hour, 50),
+		finance.LabelMovingAverage + "-1w-1d-100":             finance.NewMovingAverage(7*24*time.Hour, 24*time.Hour, 100),
+		finance.LabelMovingAverage + "-1w-1d-200":             finance.NewMovingAverage(7*24*time.Hour, 24*time.Hour, 200),
+		finance.LabelExponentialMovingAverage + "-1h-15m-10":  finance.NewExponentialMovingAverage(time.Hour, 15*time.Minute, 10),
+		finance.LabelExponentialMovingAverage + "-1h-15m-20":  finance.NewExponentialMovingAverage(time.Hour, 15*time.Minute, 20),
+		finance.LabelExponentialMovingAverage + "-1h-15m-50":  finance.NewExponentialMovingAverage(time.Hour, 15*time.Minute, 50),
+		finance.LabelExponentialMovingAverage + "-1h-15m-100": finance.NewExponentialMovingAverage(time.Hour, 15*time.Minute, 100),
+		finance.LabelExponentialMovingAverage + "-1h-15m-200": finance.NewExponentialMovingAverage(time.Hour, 15*time.Minute, 200),
+		finance.LabelExponentialMovingAverage + "-4h-1h-10":   finance.NewExponentialMovingAverage(4*time.Hour, time.Hour, 10),
+		finance.LabelExponentialMovingAverage + "-4h-1h-20":   finance.NewExponentialMovingAverage(4*time.Hour, time.Hour, 20),
+		finance.LabelExponentialMovingAverage + "-4h-1h-50":   finance.NewExponentialMovingAverage(4*time.Hour, time.Hour, 50),
+		finance.LabelExponentialMovingAverage + "-4h-1h-100":  finance.NewExponentialMovingAverage(4*time.Hour, time.Hour, 100),
+		finance.LabelExponentialMovingAverage + "-4h-1h-200":  finance.NewExponentialMovingAverage(4*time.Hour, time.Hour, 200),
+		finance.LabelExponentialMovingAverage + "-1d-4h-10":   finance.NewExponentialMovingAverage(24*time.Hour, 4*time.Hour, 10),
+		finance.LabelExponentialMovingAverage + "-1d-4h-20":   finance.NewExponentialMovingAverage(24*time.Hour, 4*time.Hour, 20),
+		finance.LabelExponentialMovingAverage + "-1d-4h-50":   finance.NewExponentialMovingAverage(24*time.Hour, 4*time.Hour, 50),
+		finance.LabelExponentialMovingAverage + "-1d-4h-100":  finance.NewExponentialMovingAverage(24*time.Hour, 4*time.Hour, 100),
+		finance.LabelExponentialMovingAverage + "-1d-4h-200":  finance.NewExponentialMovingAverage(24*time.Hour, 4*time.Hour, 200),
+		finance.LabelExponentialMovingAverage + "-1w-1d-10":   finance.NewExponentialMovingAverage(7*24*time.Hour, 24*time.Hour, 10),
+		finance.LabelExponentialMovingAverage + "-1w-1d-20":   finance.NewExponentialMovingAverage(7*24*time.Hour, 24*time.Hour, 20),
+		finance.LabelExponentialMovingAverage + "-1w-1d-50":   finance.NewExponentialMovingAverage(7*24*time.Hour, 24*time.Hour, 50),
+		finance.LabelExponentialMovingAverage + "-1w-1d-100":  finance.NewExponentialMovingAverage(7*24*time.Hour, 24*time.Hour, 100),
+		finance.LabelExponentialMovingAverage + "-1w-1d-200":  finance.NewExponentialMovingAverage(7*24*time.Hour, 24*time.Hour, 200),
+		finance.LabelRSI + "-1h-15m-2":                        finance.NewRSI(time.Hour, 15*time.Minute, 2),
+		finance.LabelRSI + "-1h-15m-6":                        finance.NewRSI(time.Hour, 15*time.Minute, 6),
+		finance.LabelRSI + "-4h-1h-2":                         finance.NewRSI(4*time.Hour, time.Hour, 2),
+		finance.LabelRSI + "-4h-1h-6":                         finance.NewRSI(4*time.Hour, time.Hour, 6),
+		finance.LabelRSI + "-1d-4h-14":                        finance.NewRSI(24*time.Hour, 4*time.Hour, 14),
+		finance.LabelRSI + "-1d-4h-20":                        finance.NewRSI(24*time.Hour, 4*time.Hour, 20),
+		finance.LabelRSI + "-1w-1d-14":                        finance.NewRSI(7*24*time.Hour, 24*time.Hour, 14),
+		finance.LabelRSI + "-1w-1d-20":                        finance.NewRSI(7*24*time.Hour, 24*time.Hour, 20),
+		finance.LabelMACD + "-1h-15m-12-26-9":                 finance.NewMACD(time.Hour, 15*time.Minute, 12, 26, 9),
+		finance.LabelMACD + "-4h-1h-12-26-9":                  finance.NewMACD(4*time.Hour, time.Hour, 12, 26, 9),
+		finance.LabelMACD + "-1d-4h-12-26-9":                  finance.NewMACD(24*time.Hour, 4*time.Hour, 12, 26, 9),
+		finance.LabelMACD + "-1w-1d-12-26-9":                  finance.NewMACD(7*24*time.Hour, 24*time.Hour, 12, 26, 9),
+		finance.LabelMACD + "-1h-15m-19-26-9":                 finance.NewMACD(time.Hour, 15*time.Minute, 19, 26, 9),
+		finance.LabelMACD + "-4h-1h-19-26-9":                  finance.NewMACD(4*time.Hour, time.Hour, 19, 26, 9),
+		finance.LabelMACD + "-1d-4h-19-26-9":                  finance.NewMACD(24*time.Hour, 4*time.Hour, 19, 26, 9),
+		finance.LabelMACD + "-1w-1d-19-26-9":                  finance.NewMACD(7*24*time.Hour, 24*time.Hour, 19, 26, 9),
+		finance.LabelStochasticOscillator + "-1h-15m-5":       finance.NewStochasticOscillator(time.Hour, 15*time.Minute, 5),
+		finance.LabelStochasticOscillator + "-4h-1h-5":        finance.NewStochasticOscillator(4*time.Hour, time.Hour, 5),
+		finance.LabelStochasticOscillator + "-1d-4h-5":        finance.NewStochasticOscillator(24*time.Hour, 4*time.Hour, 5),
+		finance.LabelStochasticOscillator + "-1w-1d-5":        finance.NewStochasticOscillator(7*24*time.Hour, 24*time.Hour, 5),
+		finance.LabelStochasticOscillator + "-1h-15m-14":      finance.NewStochasticOscillator(time.Hour, 15*time.Minute, 14),
+		finance.LabelStochasticOscillator + "-4h-1h-14":       finance.NewStochasticOscillator(4*time.Hour, time.Hour, 14),
+		finance.LabelStochasticOscillator + "-1d-4h-14":       finance.NewStochasticOscillator(24*time.Hour, 4*time.Hour, 14),
+		finance.LabelStochasticOscillator + "-1w-1d-14":       finance.NewStochasticOscillator(7*24*time.Hour, 24*time.Hour, 14),
+		finance.LabelTopPercentChange + "-1h-15m":             finance.NewTopPercentChange(time.Hour, 15*time.Minute),
+		finance.LabelTopPercentChange + "-4h-1h":              finance.NewTopPercentChange(24*time.Hour, time.Hour),
+		finance.LabelTopPercentChange + "-1d-4h":              finance.NewTopPercentChange(24*time.Hour, 4*time.Hour),
+		finance.LabelTopPercentChange + "-1w-1d":              finance.NewTopPercentChange(7*24*time.Hour, 24*time.Hour),
 	},
 }
 

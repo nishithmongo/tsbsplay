@@ -16,7 +16,7 @@ PROGRESS_INTERVAL=${PROGRESS_INTERVAL:-10s}
 #default to timeseries_collection_sharded to false
 COLLECTION_SHARDED=${COLLECTION_SHARDED:-false}
 NUMBER_INITIAL_CHUNKS=${NUMBER_INITIAL_CHUNKS:-0}
-SHARD_KEY_SPEC=${SHARD_KEY_SPEC:-"{\"tags.hostname\":"hashed"}"}
+SHARD_KEY_SPEC=${SHARD_KEY_SPEC:-""}
 BALANCER_ON=${BALANCER_ON:-true}
 
 EXE_DIR=${EXE_DIR:-$(dirname $0)}
@@ -28,6 +28,7 @@ TIMESERIES_COLLECTION=${TIMESERIES_COLLECTION:-false}
 RETRYABLE_WRITES=${RETRYABLE_WRITES:-true}
 ORDERED_INSERTS=${ORDERED_INSERTS:-true}
 RANDOM_FIELD_ORDER=${RANDOM_FIELD_ORDER:-false}
+META_FIELD_INDEX=${META_FIELD_INDEX:-""}
 
 cat ${DATA_FILE} | gunzip | $EXE_FILE_NAME \
                                 --url=${MONGO_URL} \
@@ -44,4 +45,5 @@ cat ${DATA_FILE} | gunzip | $EXE_FILE_NAME \
                                 --collection-sharded=${COLLECTION_SHARDED} \
                                 --number-initial-chunks=${NUMBER_INITIAL_CHUNKS} \
                                 --shard-key-spec=${SHARD_KEY_SPEC} \
-                                --balancer-on=${BALANCER_ON}
+                                --balancer-on=${BALANCER_ON} \
+                                --meta-field-index=${META_FIELD_INDEX}

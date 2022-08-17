@@ -41,6 +41,7 @@ func init() {
 	gob.Register([]map[string]interface{}{})
 	gob.Register(bson.M{})
 	gob.Register(bson.D{})
+	gob.Register(bson.A{})
 	gob.Register([]bson.M{})
 	gob.Register(time.Time{})
 
@@ -92,13 +93,13 @@ func (p *processor) ProcessQuery(q query.Query, _ bool) ([]*query.Stat, error) {
 	mq := q.(*query.Mongo)
 	start := time.Now().UnixNano()
 
-	cursor, err := p.collection.Aggregate(context.Background(), mq.BsonDoc)
+	cursor, err := p.collection.Aggregate(context.Background(), mq.Pipeline)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if runner.DebugLevel() > 0 {
-		fmt.Println(mq.BsonDoc)
+		fmt.Println(mq.Pipeline)
 	}
 	cnt := 0
 	for cursor.Next(context.Background()) {

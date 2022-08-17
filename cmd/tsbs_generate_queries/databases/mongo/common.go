@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/timescale/tsbs/cmd/tsbs_generate_queries/uses/devops"
+	"github.com/timescale/tsbs/cmd/tsbs_generate_queries/uses/finance"
 	"github.com/timescale/tsbs/cmd/tsbs_generate_queries/utils"
 	"github.com/timescale/tsbs/pkg/query"
 )
@@ -40,4 +41,16 @@ func (g *BaseGenerator) NewDevops(start, end time.Time, scale int) (utils.QueryG
 	}
 
 	return devops, nil
+}
+
+func (g *BaseGenerator) NewFinance(start, end time.Time, scale int) (utils.QueryGenerator, error) {
+	core, err := finance.NewCore(start, end, scale)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Finance{
+		BaseGenerator: g,
+		Core: core,
+	}, nil
 }

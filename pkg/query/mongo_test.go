@@ -12,7 +12,7 @@ func TestNewMongo(t *testing.T) {
 		if got := len(q.CollectionName); got != 0 {
 			t.Errorf("new query has non-0 collection name: got %d", got)
 		}
-		if got := len(q.BsonDoc); got != 0 {
+		if got := len(q.Pipeline); got != 0 {
 			t.Errorf("new query has non-0 bson doc: got %d", got)
 		}
 	}
@@ -20,7 +20,7 @@ func TestNewMongo(t *testing.T) {
 	check(q)
 	q.HumanLabel = []byte("foo")
 	q.HumanDescription = []byte("bar")
-	q.BsonDoc = append(q.BsonDoc, bson.M{})
+	q.Pipeline = append(q.Pipeline, bson.D{})
 	q.CollectionName = []byte("baz")
 	q.SetID(1)
 	if got := string(q.HumanLabelName()); got != "foo" {

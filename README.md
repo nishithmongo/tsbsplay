@@ -63,24 +63,28 @@ time truck status and analytics that will look at the time series data in
 an effort to be more predictive about truck behavior.  The scale factor with
 this use case will be based on the number of trucks tracked.  
 
+### Finance
+The `finance` use case contains a `price` metric simulating a stock ticker. The
+number of tickers is determined by the `scale`.
+
 ---
 
 Not all databases implement all use cases. This table below shows which use
 cases are implemented for each database:
 
-|Database|Dev ops|IoT|
-|:---|:---:|:---:|
-|Akumuli|X¹||
-|Cassandra|X||
-|ClickHouse|X||
-|CrateDB|X||
-|InfluxDB|X|X|
-|MongoDB|X|
-|QuestDB|X|X
-|SiriDB|X|
-|TimescaleDB|X|X|
-|Timestream|X||
-|VictoriaMetrics|X²||
+|Database|Dev ops|IoT|Finance|
+|:---|:---:|:---:|:---:|
+|Akumuli|X¹|||
+|Cassandra|X|||
+|ClickHouse|X|||
+|CrateDB|X|||
+|InfluxDB|X|X||
+|MongoDB|X||X|
+|QuestDB|X|X||
+|SiriDB|X|||
+|TimescaleDB|X|X||
+|Timestream|X|||
+|VictoriaMetrics|X²|||
 
 ¹ Does not support the `groupby-orderby-limit` query
 ² Does not support the `groupby-orderby-limit`, `lastpoint`, `high-cpu-1`, `high-cpu-all` queries
@@ -126,7 +130,7 @@ benchmarking phases.
 #### Data generation
 
 Variables needed:
-1. a use case. E.g., `iot` (choose from `cpu-only`, `devops`, or `iot`)
+1. a use case. E.g., `iot` (choose from `cpu-only`, `devops`, `iot`, or  `finance`)
 1. a PRNG seed for deterministic generation. E.g., `123`
 1. the number of devices / trucks to generate for. E.g., `4000`
 1. a start time for the data's timestamps. E.g., `2016-01-01T00:00:00Z`
@@ -426,6 +430,79 @@ the results.
 |avg-load|Calculate average load per truck model per fleet
 |daily-activity|Get the number of hours truck has been active (vs. out-of-commission) per day per fleet
 |breakdown-frequency|Calculate breakdown frequency by truck model
+
+### Finance
+|Query type|Description|
+|:---|:---|
+|last-price| Last price of each ticker
+|moving-average-1h-15m-10| Moving average over the last 1 hour, in 15 minute intervals, using previous 10 data points
+|moving-average-1h-15m-20| Moving average over the last 1 hour, in 15 minute intervals, using previous 20 data points
+|moving-average-1h-15m-50| Moving average over the last 1 hour, in 15 minute intervals, using previous 50 data points
+|moving-average-1h-15m-100| Moving average over the last 1 hour, in 15 minute intervals, using previous 100 data points
+|moving-average-1h-15m-200| Moving average over the last 1 hour, in 15 minute intervals, using previous 200 data points
+|moving-average-4h-1h-10| Moving average over the last 4 hours, in 1 hour intervals, using previous 10 data points
+|moving-average-4h-1h-20| Moving average over the last 4 hours, in 1 hour intervals, using previous 20 data points
+|moving-average-4h-1h-50| Moving average over the last 4 hours, in 1 hour intervals, using previous 50 data points
+|moving-average-4h-1h-100| Moving average over the last 4 hours, in 1 hour intervals, using previous 100 data points
+|moving-average-4h-1h-200| Moving average over the last 4 hours, in 1 hour intervals, using previous 200 data points
+|moving-average-1d-4h-10| Moving average over the last 1 day, in 4 hour intervals, using previous 10 data points
+|moving-average-1d-4h-20| Moving average over the last 1 day, in 4 hour intervals, using previous 20 data points
+|moving-average-1d-4h-50| Moving average over the last 1 day, in 4 hour intervals, using previous 50 data points
+|moving-average-1d-4h-100| Moving average over the last 1 day, in 4 hour intervals, using previous 100 data points
+|moving-average-1d-4h-200| Moving average over the last 1 day, in 4 hour intervals, using previous 200 data points
+|moving-average-1w-1d-10| Moving average over the last 1 week, in 1 day intervals, using previous 10 data points
+|moving-average-1w-1d-20| Moving average over the last 1 week, in 1 day intervals, using previous 20 data points
+|moving-average-1w-1d-50| Moving average over the last 1 week, in 1 day intervals, using previous 50 data points
+|moving-average-1w-1d-100| Moving average over the last 1 week, in 1 day intervals, using previous 100 data points
+|moving-average-1w-1d-200| Moving average over the last 1 week, in 1 day intervals, using previous 200 data points
+|exponential-moving-average-1h-15m-10| Exponential moving average over the last 1 hour, in 15 minute intervals, using previous 10 data points
+|exponential-moving-average-1h-15m-20| Exponential moving average over the last 1 hour, in 15 minute intervals, using previous 20 data points
+|exponential-moving-average-1h-15m-50| Exponential moving average over the last 1 hour, in 15 minute intervals, using previous 50 data points
+|exponential-moving-average-1h-15m-100| Exponential moving average over the last 1 hour, in 15 minute intervals, using previous 100 data points
+|exponential-moving-average-1h-15m-200| Exponential moving average over the last 1 hour, in 15 minute intervals, using previous 200 data points
+|exponential-moving-average-4h-1h-10| Exponential moving average over the last 4 hours, in 1 hour intervals, using previous 10 data points
+|exponential-moving-average-4h-1h-20| Exponential moving average over the last 4 hours, in 1 hour intervals, using previous 20 data points
+|exponential-moving-average-4h-1h-50| Exponential moving average over the last 4 hours, in 1 hour intervals, using previous 50 data points
+|exponential-moving-average-4h-1h-100| Exponential moving average over the last 4 hours, in 1 hour intervals, using previous 100 data points
+|exponential-moving-average-4h-1h-200| Exponential moving average over the last 4 hours, in 1 hour intervals, using previous 200 data points
+|exponential-moving-average-1d-4h-10| Exponential moving average over the last 1 day, in 4 hour intervals, using previous 10 data points
+|exponential-moving-average-1d-4h-20| Exponential moving average over the last 1 day, in 4 hour intervals, using previous 20 data points
+|exponential-moving-average-1d-4h-50| Exponential moving average over the last 1 day, in 4 hour intervals, using previous 50 data points
+|exponential-moving-average-1d-4h-100| Exponential moving average over the last 1 day, in 4 hour intervals, using previous 100 data points
+|exponential-moving-average-1d-4h-200| Exponential moving average over the last 1 day, in 4 hour intervals, using previous 200 data points
+|exponential-moving-average-1w-1d-10| Exponential moving average over the last 1 week, in 1 day intervals, using previous 10 data points
+|exponential-moving-average-1w-1d-20| Exponential moving average over the last 1 week, in 1 day intervals, using previous 20 data points
+|exponential-moving-average-1w-1d-50| Exponential moving average over the last 1 week, in 1 day intervals, using previous 50 data points
+|exponential-moving-average-1w-1d-100| Exponential moving average over the last 1 week, in 1 day intervals, using previous 100 data points
+|exponential-moving-average-1w-1d-200| Exponential moving average over the last 1 week, in 1 day intervals, using previous 200 data points
+|rsi-1h-15m-2| Relative strength index over the last 1 hour, in 15 minute intervals, using previous 2 data points
+|rsi-1h-15m-6| Relative strength index over the last 1 hour, in 15 minute intervals, using previous 6 data points
+|rsi-4h-1h-2| Relative strength index over the last 4 hours, in 1 hour intervals, using previous 2 data points
+|rsi-4h-1h-6| Relative strength index over the last 4 hours, in 1 hour intervals, using previous 6 data points
+|rsi-1d-4h-14| Relative strength index over the last 1 day, in 4 hour intervals, using previous 14 data points
+|rsi-1d-4h-20| Relative strength index over the last 1 day, in 4 hour intervals, using previous 20 data points
+|rsi-1w-1d-14| Relative strength index over the last 1 week, in 1 day intervals, using previous 14 data points
+|rsi-1w-1d-20| Relative strength index over the last 1 week, in 1 day intervals, using previous 20 data points
+|macd-1h-15m-12-26-9| Moving average convergence/divergence over the last 1 hour, in 15 minute intervals, using previous (12, 26, 9) data points
+|macd-1h-15m-19-26-9| Moving average convergence/divergence over the last 1 hour, in 15 minute intervals, using previous (19, 26, 9) data points
+|macd-4h-1h-12-26-9| Moving average convergence/divergence over the last 1 day, in 4 hour intervals, using previous (12, 26, 9) data points
+|macd-4h-1h-19-26-9| Moving average convergence/divergence over the last 1 day, in 4 hour intervals, using previous (19, 26, 9) data points
+|macd-1d-4h-12-26-9| Moving average convergence/divergence over the last 4 hours, in 1 hour intervals, using previous (12, 26, 9) data points
+|macd-1d-4h-19-26-9| Moving average convergence/divergence over the last 4 hours, in 1 hour intervals, using previous (19, 26, 9) data points
+|macd-1w-1d-12-26-9| Moving average convergence/divergence over the last 1 week, in 1 day intervals, using previous (12, 26, 9) data points
+|macd-1w-1d-19-26-9| Moving average convergence/divergence over the last 1 week, in 1 day intervals, using previous (19, 26, 9) data points
+|stochastic-oscillator-1h-15m-5| Stochastic oscillator over the last 1 hour, in 15 minute intervals, using previous 5 data points
+|stochastic-oscillator-4h-1h-5| Stochastic oscillator over the last 4 hours, in 1 hour intervals, using previous 5 data points
+|stochastic-oscillator-1d-4h-5| Stochastic oscillator over the last 1 day, in 4 hour intervals, using previous 5 data points
+|stochastic-oscillator-1w-1d-5| Stochastic oscillator over the last 1 week, in 1 day, using previous 5 data points
+|stochastic-oscillator-1h-15m-14| Stochastic oscillator over the last 1 hour, in 15 minute intervals, using previous 14 data points
+|stochastic-oscillator-4h-1h-14| Stochastic oscillator over the last 4 hours, in 1 hour intervals, using previous 14 data points
+|stochastic-oscillator-1d-4h-14| Stochastic oscillator over the last 1 day, in 4 hour intervals, using previous 14 data points
+|stochastic-oscillator-1w-1d-14| Stochastic oscillator over the last 1 week, in 1 day, using previous 14 data points
+|top-percent-change-1h-15m| Largest percent changes over the last 1 hour, in 15 minute intervals
+|top-percent-change-4h-1h| Largest percent changes over the last 4 hours, in 1 hour intervals
+|top-percent-change-1d-4h| Largest percent changes over the last 1 day, in 4 hour intervals
+|top-percent-change-1w-1d| Largest percent changes over the last 1 week, in 1 day intervals
 
 ## Contributing
 

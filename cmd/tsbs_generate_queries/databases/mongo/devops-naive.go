@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/timescale/tsbs/cmd/tsbs_generate_queries/uses/devops"
 	"github.com/timescale/tsbs/internal/utils"
@@ -45,9 +46,9 @@ func (d *NaiveDevops) GroupByTime(qi query.Query, nHosts, numMetrics int, timeRa
 	metrics, err := devops.GetCPUMetricsSlice(numMetrics)
 	panicIfErr(err)
 
-	pipelineQuery := []bson.M{
+	pipelineQuery := mongo.Pipeline{
 		{
-			"$match": bson.M{
+			{"$match", bson.M{
 				"measurement": "cpu",
 				"time": bson.M{
 					"$gte": interval.Start(),
@@ -56,20 +57,20 @@ func (d *NaiveDevops) GroupByTime(qi query.Query, nHosts, numMetrics int, timeRa
 				"tags.hostname": bson.M{
 					"$in": hostnames,
 				},
-			},
+			}},
 		},
 		{
-			"$group": bson.M{
+			{"$group", bson.M{
 				"_id": bson.M{
 					"$dateTrunc": bson.M{"date": "$time", "unit": "minute"},
 				},
-			},
+			}},
 		},
 		{
-			"$sort": bson.M{"_id": 1},
+			{"$sort", bson.M{"_id": 1}},
 		},
 	}
-	resultMap := pipelineQuery[1]["$group"].(bson.M)
+	resultMap := pipelineQuery[1][0].Value.(bson.M)
 	for _, metric := range metrics {
 		resultMap["max_"+metric] = bson.M{"$max": "$" + metric}
 	}
@@ -77,7 +78,7 @@ func (d *NaiveDevops) GroupByTime(qi query.Query, nHosts, numMetrics int, timeRa
 	humanLabel := []byte(fmt.Sprintf("Mongo [NAIVE] %d cpu metric(s), random %4d hosts, random %s by 1m", numMetrics, nHosts, timeRange))
 	q := qi.(*query.Mongo)
 	q.HumanLabel = humanLabel
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s: %s (%s)", humanLabel, interval.StartString(), q.CollectionName))
 }
@@ -94,31 +95,31 @@ func (d *NaiveDevops) GroupByTimeAndPrimaryTag(qi query.Query, numMetrics int) {
 	metrics, err := devops.GetCPUMetricsSlice(numMetrics)
 	panicIfErr(err)
 
-	pipelineQuery := []bson.M{
+	pipelineQuery := mongo.Pipeline{
 		{
-			"$match": bson.M{
+			{"$match", bson.M{
 				"measurement": "cpu",
 				"time": bson.M{
 					"$gte": interval.Start(),
 					"$lt":  interval.End(),
 				},
-			},
+			}},
 		},
 		{
-			"$group": bson.M{
+			{"$group", bson.M{
 				"_id": bson.M{
 					"time": bson.M{
 						"$dateTrunc": bson.M{"date": "$time", "unit": "hour"},
 					},
 					"hostname": "$tags.hostname",
 				},
-			},
+			}},
 		},
 		{
-			"$sort": bson.D{{"_id.time", 1}, {"_id.hostname", 1}},
+			{"$sort", bson.D{{"_id.time", 1}, {"_id.hostname", 1}}},
 		},
 	}
-	resultMap := pipelineQuery[1]["$group"].(bson.M)
+	resultMap := pipelineQuery[1][0].Value.(bson.M)
 	for _, metric := range metrics {
 		resultMap["avg_"+metric] = bson.M{"$avg": "$" + metric}
 	}
@@ -126,7 +127,7 @@ func (d *NaiveDevops) GroupByTimeAndPrimaryTag(qi query.Query, numMetrics int) {
 	humanLabel := devops.GetDoubleGroupByLabel("Mongo [NAIVE]", numMetrics)
 	q := qi.(*query.Mongo)
 	q.HumanLabel = []byte(humanLabel)
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s: %s (%s)", humanLabel, interval.StartString(), q.CollectionName))
 }
@@ -144,9 +145,9 @@ func (d *NaiveDevops) MaxAllCPU(qi query.Query, nHosts int, duration time.Durati
 	panicIfErr(err)
 	metrics := devops.GetAllCPUMetrics()
 
-	pipelineQuery := []bson.M{
+	pipelineQuery := mongo.Pipeline{
 		{
-			"$match": bson.M{
+			{"$match", bson.M{
 				"measurement": "cpu",
 				"tags.hostname": bson.M{
 					"$in": hostnames,
@@ -155,20 +156,20 @@ func (d *NaiveDevops) MaxAllCPU(qi query.Query, nHosts int, duration time.Durati
 					"$gte": interval.Start(),
 					"$lt":  interval.End(),
 				},
-			},
+			}},
 		},
 		{
-			"$group": bson.M{
+			{"$group", bson.M{
 				"_id": bson.M{
 					"$dateTrunc": bson.M{"date": "$time", "unit": "hour"},
 				},
-			},
+			}},
 		},
 		{
-			"$sort": bson.M{"_id": 1},
+			{"$sort", bson.M{"_id": 1}},
 		},
 	}
-	resultMap := pipelineQuery[1]["$group"].(bson.M)
+	resultMap := pipelineQuery[1][0].Value.(bson.M)
 	for _, metric := range metrics {
 		resultMap["max_"+metric] = bson.M{"$max": "$" + metric}
 	}
@@ -176,7 +177,7 @@ func (d *NaiveDevops) MaxAllCPU(qi query.Query, nHosts int, duration time.Durati
 	humanLabel := devops.GetMaxAllLabel("Mongo", nHosts)
 	q := qi.(*query.Mongo)
 	q.HumanLabel = []byte(humanLabel)
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s: %s", humanLabel, interval.StartString()))
 }
@@ -192,34 +193,34 @@ func (d *NaiveDevops) MaxAllCPU(qi query.Query, nHosts int, duration time.Durati
 func (d *NaiveDevops) HighCPUForHosts(qi query.Query, nHosts int) {
 	interval := d.Interval.MustRandWindow(devops.HighCPUDuration)
 
-	pipelineQuery := []bson.M{}
+	pipelineQuery := mongo.Pipeline{}
 
 	// Must match in the documents that correspond to time, as well as optionally
 	// filter on those with the correct host if nHosts > 0
-	match := bson.M{
-		"$match": bson.M{
+	match := bson.D{
+		{"$match", bson.M{
 			"measurement": "cpu",
 			"time": bson.M{
 				"$gte": interval.Start(),
 				"$lt":  interval.End(),
 			},
 			"usage_user": bson.M{"$gt": 90.0},
-		},
+		}},
 	}
 	if nHosts > 0 {
 		hostnames, err := d.GetRandomHosts(nHosts)
 		panicIfErr(err)
-		matchMap := match["$match"].(bson.M)
+		matchMap := match[0].Value.(bson.M)
 		matchMap["tags.hostname"] = bson.M{"$in": hostnames}
 	}
 	pipelineQuery = append(pipelineQuery, match)
-	pipelineQuery = append(pipelineQuery, bson.M{"$set": bson.M{"tags": "$tags.hostname"}})
+	pipelineQuery = append(pipelineQuery, bson.D{{"$set", bson.M{"tags": "$tags.hostname"}}})
 
 	humanLabel, err := devops.GetHighCPULabel("Mongo", nHosts)
 	panicIfErr(err)
 	q := qi.(*query.Mongo)
 	q.HumanLabel = []byte(humanLabel)
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s: %s (%s)", humanLabel, interval.StartString(), q.CollectionName))
 }
@@ -229,10 +230,10 @@ func (d *NaiveDevops) HighCPUForHosts(qi query.Query, nHosts int) {
 // SELECT DISTINCT ON (hostname) * FROM cpu
 // ORDER BY hostname, time DESC
 func (d *NaiveDevops) LastPointPerHost(qi query.Query) {
-	pipelineQuery := []bson.M{
-		{"$sort": bson.D{{"tags.hostname", 1}, {"time", -1}}},
-		{
-			"$group": bson.M{
+	pipelineQuery := mongo.Pipeline{
+		{{"$sort", bson.D{{"tags.hostname", 1}, {"time", -1}}}},
+		{{
+			"$group", bson.M{
 				"_id":              bson.M{"hostname": "$tags.hostname"},
 				"time":             bson.M{"$first": "$time"},
 				"usage_guest":      bson.M{"$first": "$usage_guest"},
@@ -247,13 +248,13 @@ func (d *NaiveDevops) LastPointPerHost(qi query.Query) {
 				"usage_user":       bson.M{"$first": "$usage_user"},
 				"measurement":      bson.M{"$first": "$measurement"},
 			},
-		},
+		}},
 	}
 
 	humanLabel := "Mongo last row per host"
 	q := qi.(*query.Mongo)
 	q.HumanLabel = []byte(humanLabel)
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s", humanLabel))
 }
@@ -272,32 +273,32 @@ func (d *NaiveDevops) GroupByOrderByLimit(qi query.Query) {
 		panic(err.Error())
 	}
 
-	pipelineQuery := []bson.M{
-		{
-			"$match": bson.M{
+	pipelineQuery := mongo.Pipeline{
+		{{
+			"$match", bson.M{
 				"measurement": "cpu",
 				"time": bson.M{
 					"$gte": interval.Start(),
 					"$lt":  interval.End(),
 				},
 			},
-		},
-		{
-			"$group": bson.M{
+		}},
+		{{
+			"$group", bson.M{
 				"_id": bson.M{
 					"$dateTrunc": bson.M{"date": "$time", "unit": "minute"},
 				},
 				"max_value": bson.M{"$max": "$usage_user"},
 			},
-		},
-		{"$sort": bson.M{"_id": -1}},
-		{"$limit": 5},
+		}},
+		{{"$sort", bson.M{"_id": -1}}},
+		{{"$limit", 5}},
 	}
 
 	humanLabel := "Mongo max cpu over last 5 min-intervals (random end)"
 	q := qi.(*query.Mongo)
 	q.HumanLabel = []byte(humanLabel)
-	q.BsonDoc = pipelineQuery
+	q.Pipeline = pipelineQuery
 	q.CollectionName = []byte("point_data")
 	q.HumanDescription = []byte(fmt.Sprintf("%s: %s", humanLabel, interval.EndString()))
 }
