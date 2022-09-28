@@ -17,7 +17,7 @@ type ExponentialMovingAverage struct {
 
 func NewExponentialMovingAverage(span, interval time.Duration, points int) utils.QueryFillerMaker {
 	return func(core utils.QueryGenerator) utils.QueryFiller {
-		return &MovingAverage{
+		return &ExponentialMovingAverage{
 			core, span, interval, points,
 		}
 	}
