@@ -22,25 +22,23 @@ type Finance struct {
 
 func hourDiffPipeline(end time.Time, span time.Duration) mongo.Pipeline {
 	return mongo.Pipeline{
-		{
-			{"$addFields", bson.D{
-				{"hourDiff", bson.D{
-					{"$dateDiff", bson.D{
-						{"startDate", "$time"},
-						{"endDate", end},
-						{"unit", "hour"},
-					}},
-				}},
-			}},
-		},
-		{
-			{"$match", bson.D{
-				{"hourDiff", bson.D{
-					{"$lte", span.Hours()},
-				}},
-			}},
-		},
-	}
+        {
+            {"$match", bson.D{
+                {"$expr", bson.D{
+                    {"$gte", bson.A{
+                        "$time",
+                        bson.D{
+                            {"$dateSubtract", bson.D{
+                                {"startDate", end},
+                                {"unit", "hour"},
+                                {"amount", span.Hours()},
+                            }},
+                        },
+                    }},
+                }},
+            }},
+        },
+    }
 }
 
 func sortOpenHighLowClosePipeline(interval time.Duration) mongo.Pipeline {
