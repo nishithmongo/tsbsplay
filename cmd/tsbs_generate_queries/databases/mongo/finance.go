@@ -20,25 +20,33 @@ type Finance struct {
 	*finance.Core
 }
 
+func idTimeSortStage() bson.D {
+	return bson.D{
+		{"$sort", bson.D{
+			{"_id.time", -1},
+		}},
+	}
+}
+
 func hourDiffPipeline(end time.Time, span time.Duration) mongo.Pipeline {
 	return mongo.Pipeline{
-        {
-            {"$match", bson.D{
-                {"$expr", bson.D{
-                    {"$gte", bson.A{
-                        "$time",
-                        bson.D{
-                            {"$dateSubtract", bson.D{
-                                {"startDate", end},
-                                {"unit", "hour"},
-                                {"amount", span.Hours()},
-                            }},
-                        },
-                    }},
-                }},
-            }},
-        },
-    }
+		{
+			{"$match", bson.D{
+				{"$expr", bson.D{
+					{"$gte", bson.A{
+						"$time",
+						bson.D{
+							{"$dateSubtract", bson.D{
+								{"startDate", end},
+								{"unit", "hour"},
+								{"amount", span.Hours()},
+							}},
+						},
+					}},
+				}},
+			}},
+		},
+	}
 }
 
 func sortOpenHighLowClosePipeline(interval time.Duration) mongo.Pipeline {
@@ -77,15 +85,10 @@ func sortOpenHighLowClosePipeline(interval time.Duration) mongo.Pipeline {
 	}
 }
 
-func hourDiffSortOpenHighLowCloseSortPipeline(end time.Time, span, interval time.Duration) mongo.Pipeline {
+func hourDiffSortOpenHighLowClosePipeline(end time.Time, span, interval time.Duration) mongo.Pipeline {
 	pipeline := mongo.Pipeline{}
 	pipeline = append(pipeline, hourDiffPipeline(end, span)...)
 	pipeline = append(pipeline, sortOpenHighLowClosePipeline(interval)...)
-	pipeline = append(pipeline, bson.D{
-		{"$sort", bson.D{
-			{"_id.time", -1},
-		}},
-	})
 	return pipeline
 }
 
@@ -113,7 +116,7 @@ func (f *Finance) LastPrice(q query.Query) {
 
 func (f *Finance) MovingAverage(q query.Query, span, interval time.Duration, points int) {
 	query := q.(*query.Mongo)
-	query.Pipeline = append(query.Pipeline, hourDiffSortOpenHighLowCloseSortPipeline(f.Core.Interval.End(), span, interval)...)
+	query.Pipeline = append(query.Pipeline, hourDiffSortOpenHighLowClosePipeline(f.Core.Interval.End(), span, interval)...)
 	query.Pipeline = append(query.Pipeline, mongo.Pipeline{
 		{
 			{"$setWindowFields", bson.D{
@@ -135,6 +138,7 @@ func (f *Finance) MovingAverage(q query.Query, span, interval time.Duration, poi
 			}},
 		},
 	}...)
+	query.Pipeline = append(query.Pipeline, idTimeSortStage())
 	query.CollectionName = []byte("point_data")
 	query.HumanLabel = []byte("MongoDB moving average")
 	query.HumanDescription = []byte(fmt.Sprintf("%s, last %s, interval %s, %d previous data points",
@@ -146,7 +150,7 @@ func (f *Finance) MovingAverage(q query.Query, span, interval time.Duration, poi
 
 func (f *Finance) ExponentialMovingAverage(q query.Query, span, interval time.Duration, points int) {
 	query := q.(*query.Mongo)
-	query.Pipeline = append(query.Pipeline, hourDiffSortOpenHighLowCloseSortPipeline(f.Core.Interval.End(), span, interval)...)
+	query.Pipeline = append(query.Pipeline, hourDiffSortOpenHighLowClosePipeline(f.Core.Interval.End(), span, interval)...)
 	query.Pipeline = append(query.Pipeline, mongo.Pipeline{
 		{
 			{"$setWindowFields", bson.D{
@@ -165,6 +169,7 @@ func (f *Finance) ExponentialMovingAverage(q query.Query, span, interval time.Du
 			}},
 		},
 	}...)
+	query.Pipeline = append(query.Pipeline, idTimeSortStage())
 	query.CollectionName = []byte("point_data")
 	query.HumanLabel = []byte("MongoDB exponential moving average")
 	query.HumanDescription = []byte(fmt.Sprintf("%s, last %s, interval %s, %d previous data points",
@@ -176,7 +181,7 @@ func (f *Finance) ExponentialMovingAverage(q query.Query, span, interval time.Du
 
 func (f *Finance) RSI(q query.Query, span, interval time.Duration, points int) {
 	query := q.(*query.Mongo)
-	query.Pipeline = append(query.Pipeline, hourDiffSortOpenHighLowCloseSortPipeline(f.Core.Interval.End(), span, interval)...)
+	query.Pipeline = append(query.Pipeline, hourDiffSortOpenHighLowClosePipeline(f.Core.Interval.End(), span, interval)...)
 	query.Pipeline = append(query.Pipeline, mongo.Pipeline{
 		{
 			{"$setWindowFields", bson.D{
@@ -339,6 +344,7 @@ func (f *Finance) RSI(q query.Query, span, interval time.Duration, points int) {
 			}},
 		},
 	}...)
+	query.Pipeline = append(query.Pipeline, idTimeSortStage())
 	query.CollectionName = []byte("point_data")
 	query.HumanLabel = []byte("MongoDB relative strength index")
 	query.HumanDescription = []byte(fmt.Sprintf("%s, last %s, interval %s, %d previous data points",
@@ -350,7 +356,7 @@ func (f *Finance) RSI(q query.Query, span, interval time.Duration, points int) {
 
 func (f *Finance) MACD(q query.Query, span, interval time.Duration, firstPoints, secondPoints, signalPoints int) {
 	query := q.(*query.Mongo)
-	query.Pipeline = append(query.Pipeline, hourDiffSortOpenHighLowCloseSortPipeline(f.Core.Interval.End(), span, interval)...)
+	query.Pipeline = append(query.Pipeline, hourDiffSortOpenHighLowClosePipeline(f.Core.Interval.End(), span, interval)...)
 	query.Pipeline = append(query.Pipeline, mongo.Pipeline{
 		{
 			{"$setWindowFields", bson.D{
@@ -411,6 +417,7 @@ func (f *Finance) MACD(q query.Query, span, interval time.Duration, firstPoints,
 			}},
 		},
 	}...)
+	query.Pipeline = append(query.Pipeline, idTimeSortStage())
 	query.CollectionName = []byte("point_data")
 	query.HumanLabel = []byte("MongoDB moving average convergence/divergence")
 	query.HumanDescription = []byte(fmt.Sprintf("%s, last %s, interval %s, (%d, %d, %d) previous data points",
@@ -424,7 +431,7 @@ func (f *Finance) MACD(q query.Query, span, interval time.Duration, firstPoints,
 
 func (f *Finance) StochasticOscillator(q query.Query, span, interval time.Duration, points int) {
 	query := q.(*query.Mongo)
-	query.Pipeline = append(query.Pipeline, hourDiffSortOpenHighLowCloseSortPipeline(f.Core.Interval.End(), span, interval)...)
+	query.Pipeline = append(query.Pipeline, hourDiffSortOpenHighLowClosePipeline(f.Core.Interval.End(), span, interval)...)
 	query.Pipeline = append(query.Pipeline, mongo.Pipeline{
 		{
 			{"$setWindowFields", bson.D{
@@ -534,6 +541,7 @@ func (f *Finance) StochasticOscillator(q query.Query, span, interval time.Durati
 			}},
 		},
 	}...)
+	query.Pipeline = append(query.Pipeline, idTimeSortStage())
 	query.CollectionName = []byte("point_data")
 	query.HumanLabel = []byte("MongoDB stochastic oscillator")
 	query.HumanDescription = []byte(fmt.Sprintf("%s, last %s, interval %s, %d previous data points", query.HumanLabel, span, interval, points))
