@@ -40,6 +40,7 @@ var (
 	shardKeySpec         string
 	balancerOn           bool
 	metaFieldIndex       string
+	granularity          string
 )
 
 // Global vars
@@ -80,6 +81,8 @@ func init() {
 	shardKeySpec = viper.GetString("shard-key-spec")
 	balancerOn = viper.GetBool("balancer-on")
 	metaFieldIndex = viper.GetString("meta-field-index")
+	granularity = viper.GetString("granularity")
+	
 	if documentPer {
 		config.HashWorkers = false
 	} else {

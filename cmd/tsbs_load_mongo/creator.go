@@ -57,6 +57,7 @@ func (d *dbCreator) CreateDB(dbName string) error {
 		createCollCmd = append(createCollCmd, bson.E{"timeseries", bson.M{
 			"timeField": timestampField,
 			"metaField": "tags",
+			"granularity": granularity,
 		}})
 	}
 

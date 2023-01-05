@@ -32,6 +32,7 @@ func (t *mongoTarget) TargetSpecificFlags(flagPrefix string, flagSet *pflag.Flag
 	flagSet.String(flagPrefix+"shard-key-spec", "{time:1}", "shard key spec")
 	flagSet.Bool(flagPrefix+"balancer-on", true, "whether to keep shard re-balancer on")
 	flagSet.String(flagPrefix+"meta-field-index", "", "Field name within metaField to index on")
+	flagSet.String(flagPrefix+"granularity", "seconds", "Granularity for time-series collection")
 }
 
 func (t *mongoTarget) TargetName() string {

@@ -29,6 +29,7 @@ RETRYABLE_WRITES=${RETRYABLE_WRITES:-true}
 ORDERED_INSERTS=${ORDERED_INSERTS:-true}
 RANDOM_FIELD_ORDER=${RANDOM_FIELD_ORDER:-false}
 META_FIELD_INDEX=${META_FIELD_INDEX:-""}
+GRANULARITY=${GRANULARITY:-"seconds"}
 
 cat ${DATA_FILE} | gunzip | $EXE_FILE_NAME \
                                 --url=${MONGO_URL} \
@@ -47,3 +48,4 @@ cat ${DATA_FILE} | gunzip | $EXE_FILE_NAME \
                                 --shard-key-spec=${SHARD_KEY_SPEC} \
                                 --balancer-on=${BALANCER_ON} \
                                 --meta-field-index=${META_FIELD_INDEX}
+                                --granularity=${GRANULARITY}
