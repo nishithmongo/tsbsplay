@@ -12,6 +12,8 @@ BULK_DATA_DIR=${BULK_DATA_DIR:-"/tmp/bulk_queries"}
 MAX_QUERIES=${MAX_QUERIES:-"0"}
 # How many concurrent worker would run queries - match num of cores, or default to 4
 NUM_WORKERS=${NUM_WORKERS:-$(grep -c ^processor /proc/cpuinfo 2> /dev/null || echo 4)}
+READ_TIMEOUT=${READ_TIMEOUT:-"5m0s"}
+PRINT_INTERVAL=${PRINT_INTERVAL:-"100"}
 
 #
 # Run test for one file
@@ -47,6 +49,8 @@ function run_file()
             --max-queries $MAX_QUERIES \
             --workers $NUM_WORKERS \
             --db-name $DATABASE_NAME \
+            --read-timeout $READ_TIMEOUT \
+            --print-interval $PRINT_INTERVAL \
         | tee $OUT_FULL_FILE_NAME
 }
 
