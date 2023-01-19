@@ -200,22 +200,6 @@ func (f *Finance) RSI(q query.Query, span, interval time.Duration, points int) {
 			}},
 		},
 		{
-			{"$setWindowFields", bson.D{
-				{"partitionBy", "$_id.symbol"},
-				{"sortBy", bson.D{
-					{"_id.time", 1},
-				}},
-				{"output", bson.D{
-					{"prevClose", bson.D{
-						{"$shift", bson.D{
-							{"by", -1},
-							{"output", "$close"},
-						}},
-					}},
-				}},
-			}},
-		},
-		{
 			{"$addFields", bson.D{
 				{"diff", bson.D{
 					{"$subtract", bson.A{
