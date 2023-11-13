@@ -1,4 +1,4 @@
-module github.com/timescale/tsbs
+module github.com/nishithmongo/tsbsplay
 
 go 1.14
 
